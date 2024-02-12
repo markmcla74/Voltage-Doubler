@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="google" content="notranslate">
+    <title>Voltage Doubler Simplified Diodes</title>
+   
+   <!--  <script src="jquery-3.6.3.min.js"></script> -->
+   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+   <!--<script src="plotly-2.16.1.min.js"></script> -->
+  
+  </head>
+  <body>
+   <div id="myDiv" style="width:800px;height:500px;"></div>
+   <h1> Explanation is described below: </h1>
+   <div id="imagePg1"><img src="Images/voltageDoublerSimplifiedDiodesPg1.jpg" width=800px alt=""/></div>
+   <div id="imagePg2"><img src="Images/voltageDoublerSimplifiedDiodesPg2.jpg" width=800px alt=""/></div>
+   <div id="imagePg3"><img src="Images/voltageDoublerSimplifiedDiodesPg3.jpg" width=800px alt=""/></div>
+   <div id="imagePg4"><img src="Images/matlabCodePg1.jpg" width=1500px alt=""/></div>
+   <div id="imagePg5"><img src="Images/matlabCodePg2.jpg" width=1500px alt=""/></div>
+
+  </body>
+  <script>
+//NOTE!!
+//Expected Max Voltage across C2 = 2Vmax - 0.65 -0.65 = 16.7 V
+//If the output is greater than 16.7 V, then you need to make dt smaller
+
+// Initialize and declare global arrays and global variables
+let tValues = [];
+let yValues = [];
+let inputSignal = [];
+let outputSignal = [];
+let vMax =9;
+let cycles = 8;
+let tmin = 0;
+let tmax = cycles;
+let dt=1/800; //dt = 1 cycle/800
+let maxCurrent = 0.15 //0.15A or 150mA
+let idiode = 0;
+let vd = 0;
+let c1 = 0.01; //choose capacitor values to be approx 0.01 * Period
+let c2 = 0.01;
+let vc1 = 0; //initialize capacitors to be uncharged
+let vc2 = 0;
+let dvc1 = 0;
+let dvc2 = 0;
+
+
+
+//Generate t values from 0 to cycles with a step of dt
+for (let i = 0; i <= cycles; i += dt) {
+  let value = Math.round(i * 1000000) / 1000000;
+  tValues.push(value);
+}
+
+let numOfElementsIntValues = tValues.length;
+
+//Generate input signal. 1st step is to create sine waves with period = 1
+for (let i=0; i < numOfElementsIntValues; i +=1) {
+  let value = Math.sin(2*Math.PI*tValues[i]);
+  yValues.push(value);
+}
+
+//Generate input signal continued. Use sign function on y values to create square wave
+for (let i=0; i < numOfElementsIntValues; i +=1) {
+  let value = getSign(yValues[i]);
+  yValues[i]=value;
+  //console.log(yValues[i]);
+}
+
+//Generate input signal continued. Rescale amplitude by vMax. Store signal in the array inputSignal
+for (let i=0; i < numOfElementsIntValues; i +=1) {
+  let value = yValues[i]*vMax;
+  inputSignal.push(value);
+}
+
+
+//Generate output signal continued. Update output signal on rising edge of square wave
+for (let i=0; i < numOfElementsIntValues; i +=1) {
+    if (inputSignal[i] >= 0){
+      vd = inputSignal[i] - vc1 - vc2;
+      if (vd >= 0.65){
+        idiode = maxCurrent;
+      } else {
+        idiode = 0;
+      }
+      i1 = idiode;
+      i2 = idiode;
+      dvc1 = i1*dt/c1;
+      dvc2 = i2*dt/c2;
+      vc1 = vc1 + dvc1;
+      vc2 = vc2 + dvc2;
+    }
+    if (inputSignal[i] < 0){
+     vd = -1*inputSignal[i] -(-vc1);
+     if (vd >= 0.65){
+       idiode = maxCurrent;
+     } else{
+       idiode = 0;
+     }
+     dvc1 = -1*idiode*dt/c1;
+     vc1 = vc1 + dvc1;
+    }
+    outputSignal.push(vc2);
+}
+
+
+ TESTER = document.getElementById("myDiv");  
+  var trace1 = {
+    x: tValues,
+    y: inputSignal,
+    mode: 'lines',
+    type: 'scatter',
+    name: 'Input'
+    };
+   var trace2 = {
+    x: tValues,
+    y: outputSignal,
+    mode: 'lines',
+    type: 'scatter',
+    name: 'Output'
+    };
+var data = [trace1,trace2];
+
+var layout = {
+  xaxis: {
+    range: [ 0, cycles ],
+    title: 'cycle'
+  },
+  yaxis: {
+    range: [-(vMax+1), 2*vMax],
+    title: 'Voltage'
+  },
+  title:'Voltage Doubler with Simplified Diode Model <br> Input Signal is square wave +-9 V, <br> Expected Max Voltage across C2 = 2Vmax - 0.65 -0.65 = 16.7 V'
+  
+};
+Plotly.newPlot(TESTER, data, layout);
+
+function getSign(number) {
+  if (number > 0) {
+    return 1; // Positive
+  } else if (number < 0) {
+    return -1; // Negative
+  } else {
+    return 1; // MY MODIFICATION FOR SQUARE WAVE, (NO ZERO)
+  }
+}
+
+
+  
+  </script>
+</html>
