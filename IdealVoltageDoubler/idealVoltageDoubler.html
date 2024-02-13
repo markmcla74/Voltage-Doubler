@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="google" content="notranslate">
+    <title>Voltage Doubler with Ideal Diodes</title>
+   
+   <!--  <script src="jquery-3.6.3.min.js"></script> -->
+   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <!--<script src="plotly-2.16.1.min.js"></script> -->
+  
+  </head>
+  <body>
+   <div id="myDiv" style="width:800px;height:500px;"></div>
+   <h1> Explanation is described below: </h1>
+   <div id="imagePg1"><img src="Images/voltageDoublerIdealDiodesPg1.jpg" width=800px alt=""/></div>
+   <div id="imagePg2"><img src="Images/voltageDoublerIdealDiodesPg2.jpg" width=800px alt=""/></div>
+   <div id="imagePg3"><img src="Images/voltageDoublerIdealDiodesPg3.jpg" width=800px alt=""/></div>
+   <div id="imagePg4"><img src="Images/voltageDoublerIdealDiodesPg4.jpg" width=800px alt=""/></div>
+   <div id="imagePg5"><img src="Images/voltageDoublerIdealDiodesPg5.jpg" width=800px alt=""/></div>
+  </body>
+  <script>
+
+// Initialize and declare global arrays and variables
+let tValues = [];
+let yValues = [];
+let inputSignal = [];
+let outputSignal = [];
+let cycles = 8;
+let vMax =9;
+let vCyclePrevious = Math.round(vMax*0.5*10)/10; //i.e. vPrevious = vMax/2 initally
+
+//Generate t values from 0 to cycles with a step of 0.01
+for (let i = 0; i <= cycles; i += 0.01) {
+  let value = Math.round(i * 100) / 100;
+  tValues.push(value);
+}
+
+let numOfElementsIntValues = tValues.length;
+
+//Generate input signal. 1st step is to create sine waves with period = 1
+for (let i=0; i < numOfElementsIntValues; i +=1) {
+  let value = Math.sin(2*Math.PI*tValues[i]);
+  yValues.push(value);
+}
+
+//Generate input signal continued. Use sign function on y values to create square wave
+for (let i=0; i < numOfElementsIntValues; i +=1) {
+  let value = getSign(yValues[i]);
+  yValues[i]=value;
+  //console.log(yValues[i]);
+}
+
+//Generate input signal continued. Rescale amplitude by vMax. Store signal in the array inputSignal
+for (let i=0; i < numOfElementsIntValues; i +=1) {
+  let value = yValues[i]*vMax;
+  inputSignal.push(value);
+}
+
+
+//Generate output signal continued. Update output signal on rising edge of square wave
+outputSignal[0] = vCyclePrevious;
+for (let i=1; i < numOfElementsIntValues; i +=1) {
+    if (yValues[i] <= yValues[i-1]){
+      outputSignal[i] = outputSignal[i-1];
+    }
+    if (yValues[i] > yValues[i-1]){
+      outputSignal[i] = vMax + outputSignal[i-1]/2;
+    }
+}
+
+
+ TESTER = document.getElementById("myDiv");  
+  var trace1 = {
+    x: tValues,
+    y: inputSignal,
+    mode: 'lines',
+    type: 'scatter',
+    name: 'Input'
+    };
+   var trace2 = {
+    x: tValues,
+    y: outputSignal,
+    mode: 'lines',
+    type: 'scatter',
+    name: 'Output'
+    };
+var data = [trace1,trace2];
+
+var layout = {
+  xaxis: {
+    range: [ 0, cycles ],
+    title: 'cycle'
+  },
+  yaxis: {
+    range: [-(vMax+1), 2*vMax],
+    title: 'Voltage'
+  },
+  title:'Voltage Doubler with Ideal Diodes. Output is voltage across C2'
+  
+};
+Plotly.newPlot(TESTER, data, layout);
+
+function getSign(number) {
+  if (number > 0) {
+    return 1; // Positive
+  } else if (number < 0) {
+    return -1; // Negative
+  } else {
+    return 1; // MY MODIFICATION FOR SQUARE WAVE, (NO ZERO)
+  }
+}
+
+
+  
+  </script>
+</html>
